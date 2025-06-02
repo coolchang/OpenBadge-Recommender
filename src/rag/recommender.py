@@ -143,7 +143,7 @@ class BadgeRecommender:
         # 배지 검색
         recommended_badges = self.retriever.search_badges(
             query=query,
-            top_k=3,
+            top_k=5,
             filter_criteria=filter_criteria
         )
         
@@ -188,13 +188,20 @@ class BadgeRecommender:
             return {}
         
         user = user_results[0]
+        
+        # skills와 acquired_badges를 리스트로 변환
+        skills = self._parse_list_string(user['metadata']['skills'])
+        acquired_badges = self._parse_list_string(user['metadata']['acquired_badges'])
+        
+        # UserResponse 모델에 맞는 형식으로 반환
         return {
+            "user_id": user_id,
             "name": user['metadata']['name'],
             "goal": user['metadata']['goal'],
-            "skills": user['metadata']['skills'],
+            "skills": skills,
             "competency_level": user['metadata']['competency_level'],
             "education_level": user['metadata']['education_level'],
-            "acquired_badges": user['metadata']['acquired_badges']
+            "acquired_badges": acquired_badges
         }
     
     def recommend_badges(self, user_id: str) -> Dict[str, List[Dict[str, Any]]]:
@@ -207,10 +214,13 @@ class BadgeRecommender:
         Returns:
             추천 결과를 담은 딕셔너리
         """
+        print(f"\n=== 추천 시작: 사용자 {user_id} ===")
+        
         # 사용자 정보 가져오기
         user_info = self._get_user_info(user_id)
         
         if not user_info:
+            print("사용자 정보를 찾을 수 없습니다.")
             return {"recommendations": []}
         
         # 사용자 정보 포맷팅
@@ -226,6 +236,11 @@ class BadgeRecommender:
         try:
             # RAG 체인 실행
             recommendation = self.chain.invoke(formatted_user_info)
+            recommendations = recommendation.get('recommendations', [])
+            print(f"추천된 배지 수: {len(recommendations)}")
+            print("추천된 배지 목록:")
+            for idx, badge in enumerate(recommendations, 1):
+                print(f"{idx}. {badge['name']} (ID: {badge['badge_id']})")
             return recommendation
         except Exception as e:
             print(f"추천 생성 중 오류 발생: {str(e)}")

@@ -42,7 +42,7 @@ async def get_badge_recommendations(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-router.get("/user/{user_id}", response_model=UserResponse)
+@router.get("/user/{user_id}", response_model=UserResponse)
 async def get_user_info(user_id: str):
     """
     사용자 정보를 조회합니다.
